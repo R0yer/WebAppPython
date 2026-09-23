@@ -21,7 +21,16 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
+            sudo mkdir -p /var/www/python-web-app
+            sudo chown -R $USER:$USER /var/www/python-web-app
+
             cd /var/www/python-web-app
+
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/${{ github.repository }}.git .
+            else
+              git pull origin main
+            fi
 
             git pull origin main
             python3 -m venv .venv
