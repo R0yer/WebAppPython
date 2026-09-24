@@ -14,7 +14,12 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-    - name: iniciando deploy - instalando dependencias
+    - name: Mostrar configuración
+      run: |
+        echo "Host: ${{ secrets.SERVER_HOST }}"
+        echo "Usuario: ${{ secrets.SERVER_USER }}"
+
+    - name: iniciando deploy - instalando dependencias   
       uses: appleboy/ssh-action@v1.2.0
       with:
         host: ${{ secrets.SERVER_HOST }}
