@@ -19,24 +19,24 @@ jobs:
         echo "Host: ${{ secrets.SERVER_HOST }}"
         echo "Usuario: ${{ secrets.SERVER_USER }}"
 
-    - name: Deploy - Forzar actualización de código y reinicio limpio
+    - name: Deploy - Actualizar código y reiniciar app
       uses: appleboy/ssh-action@v1.2.0
       with:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-            # 1. Traer los cambios exactos de GitHub reemplazando todo lo local
+            # 1. Traer los cambios limpios de GitHub
             cd /var/www/python-web-app
             git fetch origin main
             git reset --hard origin/main
 
-            # 2. Reinstalar dependencias
+            # 2. Entorno virtual e instalación de dependencias
             python3 -m venv .venv
             source .venv/bin/activate
             pip install -r requirements.txt
 
-            # 3. Asegurar la configuración del servicio
+            # 3. Crear/actualizar el archivo de servicio
             mkdir -p /home/roger/.config/systemd/user/
 
             cat << 'EOF' > /home/roger/.config/systemd/user/python-web-app.service
@@ -53,13 +53,8 @@ jobs:
             WantedBy=default.target
             EOF
 
-            # 4. MATAR procesos viejos de Gunicorn colgados en memoria
-            pkill -f gunicorn || true
-
-            # 5. Recargar systemd y arrancar el servicio de cero
+            # 4. Detener y reiniciar limpiamente a través de systemd
             systemctl --user daemon-reload
             systemctl --user enable python-web-app.service
-            systemctl --user restart python-web-app.service
-
-            # 6. Recargar Nginx para forzar el refresco de conexiones
-            sudo systemctl reload nginx || true
+            systemctl --user stop python-web-app.service || true
+            systemctl --user start python-web-app.service
