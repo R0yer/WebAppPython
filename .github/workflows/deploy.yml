@@ -26,8 +26,9 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
+            # Asegura la carpeta del proyecto para el usuario roger
             sudo mkdir -p /var/www/python-web-app
-            sudo chown -R $USER:$USER /var/www/python-web-app
+            sudo chown -R roger:roger /var/www/python-web-app
 
             cd /var/www/python-web-app
 
@@ -41,5 +42,25 @@ jobs:
             source .venv/bin/activate
             pip install -r requirements.txt
 
-            # Reinicia el servicio sin usar sudo
-            systemctl restart python-web-app
+            # Crear directorio de servicios de usuario para roger
+            mkdir -p /home/roger/.config/systemd/user/
+
+            # Crear el archivo de servicio
+            cat << 'EOF' > /home/roger/.config/systemd/user/python-web-app.service
+            [Unit]
+            Description=Python Web Application
+            After=network.target
+
+            [Service]
+            WorkingDirectory=/var/www/python-web-app
+            ExecStart=/var/www/python-web-app/.venv/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app
+            Restart=always
+
+            [Install]
+            WantedBy=default.target
+            EOF
+
+            # Recargar, habilitar e iniciar el servicio en modo usuario (sin pedir sudo)
+            systemctl --user daemon-reload
+            systemctl --user enable python-web-app.service
+            systemctl --user restart python-web-app.service
