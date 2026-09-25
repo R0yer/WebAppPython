@@ -41,6 +41,9 @@ jobs:
             source .venv/bin/activate
             pip install -r requirements.txt
 
-            # Reinicia el proceso sin depender de systemd
+            # Detener el proceso anterior
             pkill -f gunicorn || true
-            nohup .venv/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app > app.log 2>&1 &
+
+            # Iniciar Gunicorn completamente desacoplado de la sesión SSH
+            nohup .venv/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app > app.log 2>&1 < /dev/null &
+            sleep 2
