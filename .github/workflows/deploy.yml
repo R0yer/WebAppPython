@@ -37,8 +37,10 @@ jobs:
               git pull origin main
             fi
 
-            git pull origin main
             python3 -m venv .venv
             source .venv/bin/activate
             pip install -r requirements.txt
-            sudo systemctl restart python-web-app
+
+            # Reiniciar app con gunicorn en segundo plano
+            pkill -f gunicorn || true
+            nohup .venv/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app > app.log 2>&1 &
