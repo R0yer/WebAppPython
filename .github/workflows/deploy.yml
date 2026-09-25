@@ -41,9 +41,5 @@ jobs:
             source .venv/bin/activate
             pip install -r requirements.txt
 
-            # Detener el proceso anterior
-            pkill -f gunicorn || true
-
-            # Iniciar Gunicorn completamente desacoplado de la sesión SSH
-            nohup .venv/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app > app.log 2>&1 < /dev/null &
-            sleep 2
+            # Reinicia el servicio sin usar sudo
+            systemctl restart python-web-app
