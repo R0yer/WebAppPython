@@ -23,7 +23,7 @@ listas = [
 @app.route('/')
 def home():
     title = 'Mi primera web con Flask'
-    mensaje = '¡Bienvenido a mi sitio web básico!'
+    mensaje = '¡Bienvenido a mi sitio web básico de python!'
     return render_template('index.html', title=title, mensaje=mensaje, listas=listas)
 
 @app.route('/lista/<slug>')
