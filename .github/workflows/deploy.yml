@@ -19,33 +19,26 @@ jobs:
         echo "Host: ${{ secrets.SERVER_HOST }}"
         echo "Usuario: ${{ secrets.SERVER_USER }}"
 
-    - name: iniciando deploy - instalando dependencias   
+    - name: Deploy - Actualizar código y reiniciar app
       uses: appleboy/ssh-action@v1.2.0
       with:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-            # Asegura la carpeta del proyecto para el usuario roger
-            sudo mkdir -p /var/www/python-web-app
-            sudo chown -R roger:roger /var/www/python-web-app
-
+            # 1. Posicionarse en el proyecto y traer el código nuevo
             cd /var/www/python-web-app
+            git fetch origin main
+            git reset --hard origin/main
 
-            if [ ! -d ".git" ]; then
-              git clone https://github.com/${{ github.repository }}.git .
-            else
-              git pull origin main
-            fi
-
+            # 2. Instalar o actualizar dependencias de Python
             python3 -m venv .venv
             source .venv/bin/activate
             pip install -r requirements.txt
 
-            # Crear directorio de servicios de usuario para roger
+            # 3. Asegurar el archivo de servicio del usuario roger
             mkdir -p /home/roger/.config/systemd/user/
 
-            # Crear el archivo de servicio
             cat << 'EOF' > /home/roger/.config/systemd/user/python-web-app.service
             [Unit]
             Description=Python Web Application
@@ -53,14 +46,14 @@ jobs:
 
             [Service]
             WorkingDirectory=/var/www/python-web-app
-            ExecStart=/var/www/python-web-app/.venv/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app
+            ExecStart=/var/www/python-web-app/.venv/bin/gunicorn --workers 3 --bind 127.0.0.1:5000 app:app
             Restart=always
 
             [Install]
             WantedBy=default.target
             EOF
 
-            # Recargar, habilitar e iniciar el servicio en modo usuario (sin pedir sudo)
+            # 4. Recargar systemd y reiniciar Gunicorn (sin sudo)
             systemctl --user daemon-reload
             systemctl --user enable python-web-app.service
             systemctl --user restart python-web-app.service
